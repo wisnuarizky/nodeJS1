@@ -9,27 +9,80 @@ const response = require("./response");
 app.use(bodyParser.json());
 
 app.get("/", (req, res) => {
-  db.query("SELECT * FROM mahasiswa", (error, result) => {
-    // hasil data dari mysql
-    response(200, result, "get all data  from table mahasiswa", res);
-  });
+  response(200, "API ready to go!", "SUCCESSS", res);
 });
 
-app.get("/find", (req, res) => {
-  const sql = `SELECT nama_lengkap FROM mahasiswa WHERE nim = ${req.query.nim}`;
+app.get("/mahasiswa", (req, res) => {
+  const sql = "SELECT * FROM mahasiswa";
+
   db.query(sql, (error, result) => {
-    response(200, result, "get mahasiswa", res);
+    if (error) throw error;
+    response(200, result, "ini message", res);
   });
 });
 
-app.post("/login", (req, res) => {
-  console.log({ requestFrom: req.body });
-  res.send("login berhasil!");
+app.get("/mahasiswa/:nim", (req, res) => {
+  const nim = req.params.nim;
+  const sql = `SELECT * FROM mahasiswa WHERE nim = ${nim}`;
+
+  db.query(sql, (error, result) => {
+    if (error) throw error;
+    response(200, result, "ini message", res);
+  });
 });
 
-app.put("/username", (req, res) => {
-  console.log({ UpdateForm: req.body });
-  res.send("Update Berhasil!!");
+app.post("/mahasiswa", (req, res) => {
+  const { nim, namaLengkap, kelas, alamat } = req.body;
+  const sql = `INSERT INTO mahasiswa (nim, nama_lengkap, kelas, alamat) VALUES (${nim}, '${namaLengkap}', '${kelas}', '${alamat}')`;
+
+  db.query(sql, (error, result) => {
+    if (error) response(500, "invalid", "error", res);
+    if (result?.affectedRows) {
+      const data = {
+        isSuccess: result.affectedRows,
+        id: result.insertId,
+      };
+      response(200, data, "Berhasil Menambahkan Data", res);
+    }
+  });
+});
+
+app.put("/mahasiswa", (req, res) => {
+  const { nim, namaLengkap, kelas, alamat } = req.body;
+  const sql = `UPDATE mahasiswa SET nama_lengkap = '${namaLengkap}',
+                                    kelas = '${kelas}',
+                                    alamat = '${alamat}'
+                                    WHERE nim = ${nim}`;
+
+  db.query(sql, (error, result) => {
+    if (error) response(500, "Invalid", "Error", res);
+    if (result?.affectedRows) {
+      const data = {
+        isSuccess: result.affectedRows,
+        message: result.message,
+      };
+      response(200, data, "ini message", res);
+    } else {
+      response(500, "Mohon Maaf Tidak Menemukan Data!!!", "Gada Data Cok", res);
+    }
+  });
+});
+
+app.delete("/mahasiswa", (req, res) => {
+  const { nim } = req.body;
+  const sql = `DELETE FROM mahasiswa WHERE nim = ${nim}`;
+
+  db.query(sql, (error, result) => {
+    if (error) response(500, "invalid", "error", res);
+    if (result?.affectedRows) {
+      const data = {
+        isDelete: result.affectedRows,
+      };
+      response(200, data, "ini delete data", res);
+    } else {
+      response(500, "Mohon Maaf Tidak Menemukan Data!!!", "Gada Data Cok", res);
+    }
+  });
 });
 
 app.listen(port, () => {
